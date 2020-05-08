@@ -1,0 +1,17 @@
+{
+    "name": "Thread",
+    "type": "model",
+    "validationExpression": "val.length > 0",
+    "gloopProperties": [
+        {
+            "name": "id",
+            "allowNull": false,
+            "comments": "The identifier for this thread"
+        },
+        {
+            "name": "createdAt",
+            "type": "date",
+            "comments": "The creation timestamp"
+        }
+    ]
+}

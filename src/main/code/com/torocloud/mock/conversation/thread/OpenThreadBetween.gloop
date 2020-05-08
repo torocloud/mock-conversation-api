@@ -1,0 +1,179 @@
+{
+    "comments": "Loads or creates the thread between the provided participants",
+    "input": [
+        {
+            "name": "from",
+            "allowNull": false,
+            "comments": "The participant id of the sender"
+        },
+        {
+            "name": "to",
+            "allowNull": false,
+            "comments": "The participant id of the recipient"
+        }
+    ],
+    "output": [
+        {
+            "name": "thread",
+            "type": "model",
+            "reference": "com.torocloud.mock.conversation.thread.Thread"
+        },
+        {
+            "name": "error",
+            "type": "model",
+            "reference": "com.torocloud.mock.conversation.Error"
+        }
+    ],
+    "steps": [
+        {
+            "type": "invokeGloop",
+            "name": "com.torocloud.mock.conversation.configuration.DataSourceProperties",
+            "declare": [
+                {
+                    "variables": [
+                        {
+                            "name": "database",
+                            "type": "model",
+                            "gloopProperties": [
+                                {
+                                    "name": "name"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "outputs": [
+                {
+                    "from": [
+                        "name"
+                    ],
+                    "to": [
+                        "database",
+                        "name"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "invokeGloop",
+            "name": "com.torocloud.mock.conversation.thread._FindThreadBetween",
+            "inputs": [
+                {
+                    "from": [
+                        "database",
+                        "name"
+                    ],
+                    "to": [
+                        "_FindThreadBetweenInput",
+                        "$martiniConnectionPool"
+                    ]
+                },
+                {
+                    "from": [
+                        "from"
+                    ],
+                    "to": [
+                        "_FindThreadBetweenInput",
+                        "left"
+                    ]
+                },
+                {
+                    "from": [
+                        "to"
+                    ],
+                    "to": [
+                        "_FindThreadBetweenInput",
+                        "right"
+                    ]
+                }
+            ],
+            "outputs": [
+                {
+                    "from": [
+                        "_FindThreadBetweenOutput",
+                        "THREAD_ID"
+                    ],
+                    "to": [
+                        "thread",
+                        "id"
+                    ]
+                },
+                {
+                    "from": [
+                        "_FindThreadBetweenOutput",
+                        "DATE_CREATED"
+                    ],
+                    "to": [
+                        "thread",
+                        "createdAt"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "fork",
+            "comments": "Is there an existing thread?",
+            "expression": "thread != null",
+            "children": [
+                {
+                    "type": "block",
+                    "label": "false",
+                    "comments": "Create a new one",
+                    "children": [
+                        {
+                            "type": "invokeGloop",
+                            "name": "com.torocloud.mock.conversation.thread.StartThreadBetween",
+                            "inputs": [
+                                {
+                                    "from": [
+                                        "from"
+                                    ],
+                                    "to": [
+                                        "participant1"
+                                    ]
+                                },
+                                {
+                                    "from": [
+                                        "to"
+                                    ],
+                                    "to": [
+                                        "participant2"
+                                    ]
+                                }
+                            ],
+                            "outputs": [
+                                {
+                                    "from": [
+                                        "threadId"
+                                    ],
+                                    "to": [
+                                        "thread",
+                                        "id"
+                                    ]
+                                },
+                                {
+                                    "from": [
+                                        "error"
+                                    ],
+                                    "to": [
+                                        "error"
+                                    ]
+                                },
+                                {
+                                    "type": "set",
+                                    "expression": "new Date()",
+                                    "evaluate": true,
+                                    "to": [
+                                        "thread",
+                                        "createdAt"
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

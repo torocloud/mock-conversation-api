@@ -1,0 +1,103 @@
+{
+    "comments": "A configuration mapping of the datasources in the package.properties",
+    "output": [
+        {
+            "name": "name",
+            "allowNull": false
+        },
+        {
+            "name": "driverClassName",
+            "allowNull": false
+        },
+        {
+            "name": "url",
+            "allowNull": false,
+            "defaultValue": ""
+        },
+        {
+            "name": "username",
+            "allowNull": false
+        },
+        {
+            "name": "password"
+        },
+        {
+            "name": "prepopulate",
+            "type": "boolean",
+            "defaultValue": false
+        }
+    ],
+    "steps": [
+        {
+            "comments": "Evaluate the current profile",
+            "declare": [
+                {
+                    "variables": [
+                        {
+                            "name": "prefix"
+                        }
+                    ]
+                }
+            ],
+            "lines": [
+                {
+                    "type": "set",
+                    "expression": "'database.type'.getPackageProperty()",
+                    "evaluate": true,
+                    "to": [
+                        "prefix"
+                    ]
+                }
+            ]
+        },
+        {
+            "comments": "Retrieve data source properties according to the profile",
+            "lines": [
+                {
+                    "type": "set",
+                    "expression": "'database.name'.getPackageProperty()",
+                    "evaluate": true,
+                    "to": [
+                        "name"
+                    ]
+                },
+                {
+                    "type": "set",
+                    "expression": "\"${prefix}.driver\".getPackageProperty()",
+                    "evaluate": true,
+                    "to": [
+                        "driverClassName"
+                    ]
+                },
+                {
+                    "type": "set",
+                    "expression": "\"${prefix}.connection.url\".getPackageProperty()",
+                    "evaluate": true,
+                    "to": [
+                        "url"
+                    ]
+                },
+                {
+                    "type": "set",
+                    "expression": "\"${prefix}.username\".getPackageProperty()",
+                    "evaluate": true,
+                    "to": [
+                        "username"
+                    ]
+                },
+                {
+                    "type": "set",
+                    "expression": "\"${prefix}.password\".getPackageProperty(\"\")",
+                    "evaluate": true,
+                    "to": [
+                        "password"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "gloovy",
+            "gloovyScript": "prepopulate = \"true\".equals('prepopulate'.getPackageProperty(\"false\"))"
+        }
+    ]
+}

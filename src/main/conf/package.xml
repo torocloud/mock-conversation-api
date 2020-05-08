@@ -1,0 +1,7 @@
+<package stateOnStartup="started" id="mock-conversation-api" version="1.0.0" context-path="/mock-conversation-api">
+  <package-dependencies/>
+  <startup-services>
+    <startup-service>gloop:com.torocloud.mock.conversation.configuration.InitSchema/com.torocloud.mock.conversation.configuration.InitSchema</startup-service>
+  </startup-services>
+  <shutdown-services/>
+</package>

@@ -1,0 +1,181 @@
+{
+    "input": [
+        {
+            "name": "participant",
+            "type": "model",
+            "gloopProperties": [
+                {
+                    "name": "name"
+                }
+            ]
+        }
+    ],
+    "output": [
+        {
+            "name": "responseCode",
+            "type": "integer"
+        },
+        {
+            "name": "response200",
+            "type": "model",
+            "comments": "The registered participant",
+            "reference": "com.torocloud.mock.conversation.thread.participant.Participant"
+        },
+        {
+            "name": "response400",
+            "type": "model",
+            "comments": "When the participant name provided is already registered",
+            "reference": "io.toro.martini.api.APIException"
+        },
+        {
+            "name": "response500",
+            "type": "model",
+            "comments": "When the exception is unhandled",
+            "reference": "io.toro.martini.api.APIException"
+        }
+    ],
+    "steps": [
+        {
+            "type": "invokeGloop",
+            "name": "com.torocloud.mock.conversation.thread.participant.RegisterParticipant",
+            "declare": [
+                {
+                    "variables": [
+                        {
+                            "name": "error",
+                            "type": "model",
+                            "reference": "com.torocloud.mock.conversation.Error"
+                        }
+                    ]
+                }
+            ],
+            "inputs": [
+                {
+                    "from": [
+                        "participant",
+                        "name"
+                    ],
+                    "to": [
+                        "name"
+                    ]
+                }
+            ],
+            "outputs": [
+                {
+                    "from": [
+                        "participant"
+                    ],
+                    "to": [
+                        "response200"
+                    ]
+                },
+                {
+                    "from": [
+                        "error"
+                    ],
+                    "to": [
+                        "error"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "fork",
+            "expression": "error.code == null",
+            "children": [
+                {
+                    "type": "block",
+                    "label": "true",
+                    "children": [
+                        {
+                            "comments": "OK",
+                            "lines": [
+                                {
+                                    "type": "set",
+                                    "expression": "200",
+                                    "to": [
+                                        "responseCode"
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "break",
+                            "expression": "$gloopService"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "fork",
+            "expression": "error.code",
+            "children": [
+                {
+                    "label": "PARTICIPANT_ALREADY_EXISTS",
+                    "comments": "400 - Bad Request",
+                    "lines": [
+                        {
+                            "from": [
+                                "error",
+                                "message"
+                            ],
+                            "to": [
+                                "response400",
+                                "message"
+                            ]
+                        },
+                        {
+                            "type": "set",
+                            "expression": "400",
+                            "to": [
+                                "responseCode"
+                            ]
+                        },
+                        {
+                            "type": "set",
+                            "expression": "error.code.getValue()",
+                            "evaluate": true,
+                            "to": [
+                                "response400",
+                                "apiErrorCode"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "$else",
+                    "comments": "500 - Internal Server Error",
+                    "lines": [
+                        {
+                            "from": [
+                                "error",
+                                "message"
+                            ],
+                            "to": [
+                                "response500",
+                                "message"
+                            ]
+                        },
+                        {
+                            "type": "set",
+                            "expression": "error.code.getValue()",
+                            "evaluate": true,
+                            "to": [
+                                "response500",
+                                "apiErrorCode"
+                            ]
+                        },
+                        {
+                            "type": "set",
+                            "expression": "500",
+                            "to": [
+                                "responseCode"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

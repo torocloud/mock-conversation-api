@@ -1,0 +1,33 @@
+{
+    "name": "Message",
+    "type": "model",
+    "gloopProperties": [
+        {
+            "name": "id",
+            "allowNull": false,
+            "defaultValue": "",
+            "comments": "The identifier of this message"
+        },
+        {
+            "name": "createdAt",
+            "type": "date",
+            "comments": "The creation timestamp"
+        },
+        {
+            "name": "body",
+            "allowNull": false,
+            "comments": "The actual content of the message",
+            "maxLength": 512
+        },
+        {
+            "name": "participantId",
+            "allowNull": false,
+            "defaultValue": "",
+            "comments": "The identifier of the user that sent this message"
+        },
+        {
+            "name": "threadId",
+            "comments": "The identifier of the thread where this message belongs to"
+        }
+    ]
+}

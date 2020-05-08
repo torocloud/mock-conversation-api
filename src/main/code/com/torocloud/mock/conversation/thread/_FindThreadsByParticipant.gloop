@@ -1,0 +1,46 @@
+{
+    "type": "customSql",
+    "input": [
+        {
+            "name": "_FindThreadsByParticipantInput",
+            "type": "model",
+            "gloopProperties": [
+                {
+                    "name": "$martiniConnectionPool"
+                },
+                {
+                    "name": "$limit",
+                    "type": "integer"
+                },
+                {
+                    "name": "participantId"
+                }
+            ]
+        }
+    ],
+    "output": [
+        {
+            "name": "_FindThreadsByParticipantInputCursor",
+            "type": "model",
+            "array": true,
+            "gloopProperties": [
+                {
+                    "name": "THREAD_ID",
+                    "required": true,
+                    "allowNull": false
+                },
+                {
+                    "name": "PARTICIPANT_ID",
+                    "required": true
+                },
+                {
+                    "name": "PARTICIPANT_NAME",
+                    "required": true
+                }
+            ]
+        }
+    ],
+    "connectionPoolName": "mock_conversation_api",
+    "sqlType": "SELECT_MULTI",
+    "query": "SELECT\n  \"LTP\".\"THREAD_ID\" AS \"THREAD_ID\",\n  \"P\".\"ID\" AS \"PARTICIPANT_ID\",\n  \"P\".\"NAME\" AS \"PARTICIPANT_NAME\"\nFROM \n  \"THREAD_PARTICIPANTS\" \"LTP\"\nINNER JOIN\n  \"THREAD_PARTICIPANTS\" \"RTP\"\n  ON\n  \"LTP\".\"THREAD_ID\" = \"RTP\".\"THREAD_ID\"\nLEFT JOIN\n  \"PARTICIPANTS\" \"P\"\n  ON\n  \"RTP\".\"PARTICIPANT_ID\" = \"P\".\"ID\"\nWHERE\n  \"LTP\".\"ARCHIVED\" = 0\n  AND\n  \"LTP\".\"PARTICIPANT_ID\" = :participantId\n  AND\n  \"RTP\".\"PARTICIPANT_ID\" <> :participantId"
+}

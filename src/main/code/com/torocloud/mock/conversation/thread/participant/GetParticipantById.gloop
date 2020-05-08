@@ -1,0 +1,172 @@
+{
+    "comments": "Fetches the matching participant, and returns an error object if none is found",
+    "input": [
+        {
+            "name": "participantId",
+            "comments": "The participant id"
+        }
+    ],
+    "output": [
+        {
+            "name": "match",
+            "type": "model",
+            "reference": "com.torocloud.mock.conversation.thread.participant.Participant"
+        },
+        {
+            "name": "error",
+            "type": "model",
+            "reference": "com.torocloud.mock.conversation.Error"
+        }
+    ],
+    "steps": [
+        {
+            "type": "invokeGloop",
+            "name": "com.torocloud.mock.conversation.configuration.DataSourceProperties",
+            "declare": [
+                {
+                    "variables": [
+                        {
+                            "name": "database",
+                            "type": "model",
+                            "gloopProperties": [
+                                {
+                                    "name": "name"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "outputs": [
+                {
+                    "from": [
+                        "name"
+                    ],
+                    "to": [
+                        "database",
+                        "name"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "invokeGloop",
+            "comments": "Fetch the matching participant",
+            "name": "com.torocloud.mock.conversation.thread.participant._FindParticipantById",
+            "declare": [
+                {
+                    "variables": [
+                        {
+                            "name": "matchingParticipant",
+                            "type": "model",
+                            "gloopProperties": [
+                                {
+                                    "name": "ID",
+                                    "required": true,
+                                    "allowNull": false
+                                },
+                                {
+                                    "name": "NAME",
+                                    "required": true
+                                },
+                                {
+                                    "name": "DATE_CREATED",
+                                    "type": "date",
+                                    "required": true
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "inputs": [
+                {
+                    "from": [
+                        "database",
+                        "name"
+                    ],
+                    "to": [
+                        "_FindParticipantByIdInput",
+                        "$martiniConnectionPool"
+                    ]
+                },
+                {
+                    "from": [
+                        "participantId"
+                    ],
+                    "to": [
+                        "_FindParticipantByIdInput",
+                        "participantId"
+                    ]
+                }
+            ],
+            "outputs": [
+                {
+                    "from": [
+                        "_FindParticipantByIdOutput"
+                    ],
+                    "to": [
+                        "matchingParticipant"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "fork",
+            "comments": "Does it exist?",
+            "expression": "matchingParticipant.ID != null",
+            "children": [
+                {
+                    "label": "true",
+                    "comments": "Return the match",
+                    "lines": [
+                        {
+                            "from": [
+                                "matchingParticipant",
+                                "ID"
+                            ],
+                            "to": [
+                                "match",
+                                "id"
+                            ]
+                        },
+                        {
+                            "from": [
+                                "matchingParticipant",
+                                "NAME"
+                            ],
+                            "to": [
+                                "match",
+                                "name"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "false",
+                    "comments": "Return an error object instead",
+                    "lines": [
+                        {
+                            "type": "set",
+                            "expression": "com.torocloud.mock.conversation.Code.NO_SUCH_PARTICIPANT",
+                            "evaluate": true,
+                            "to": [
+                                "error",
+                                "code"
+                            ]
+                        },
+                        {
+                            "type": "set",
+                            "expression": "\"No such participant was found with id '$participantId'\"",
+                            "evaluate": true,
+                            "to": [
+                                "error",
+                                "message"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

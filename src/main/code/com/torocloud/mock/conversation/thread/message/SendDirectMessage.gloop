@@ -1,0 +1,203 @@
+{
+    "comments": "Sends a direct message to a participant. If a message is sent to an archived thread, the thread is automatically unarchived.",
+    "input": [
+        {
+            "name": "from",
+            "allowNull": false,
+            "comments": "The sender participant id"
+        },
+        {
+            "name": "to",
+            "allowNull": false,
+            "comments": "The recipient participant id"
+        },
+        {
+            "name": "body",
+            "allowNull": false,
+            "comments": "The message content"
+        }
+    ],
+    "output": [
+        {
+            "name": "error",
+            "type": "model",
+            "reference": "com.torocloud.mock.conversation.Error"
+        }
+    ],
+    "steps": [
+        {
+            "type": "invokeGloop",
+            "name": "com.torocloud.mock.conversation.thread.OpenThreadBetween",
+            "declare": [
+                {
+                    "variables": [
+                        {
+                            "name": "threadId"
+                        }
+                    ]
+                }
+            ],
+            "inputs": [
+                {
+                    "from": [
+                        "from"
+                    ],
+                    "to": [
+                        "from"
+                    ]
+                },
+                {
+                    "from": [
+                        "to"
+                    ],
+                    "to": [
+                        "to"
+                    ]
+                }
+            ],
+            "outputs": [
+                {
+                    "from": [
+                        "thread",
+                        "id"
+                    ],
+                    "to": [
+                        "threadId"
+                    ]
+                },
+                {
+                    "from": [
+                        "error"
+                    ],
+                    "to": [
+                        "error"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "fork",
+            "comments": "Was a thread opened?",
+            "expression": "error.code != null",
+            "children": [
+                {
+                    "type": "break",
+                    "label": "true",
+                    "expression": "$gloopService"
+                }
+            ]
+        },
+        {
+            "type": "invokeGloop",
+            "name": "com.torocloud.mock.conversation.configuration.DataSourceProperties",
+            "declare": [
+                {
+                    "variables": [
+                        {
+                            "name": "database",
+                            "type": "model",
+                            "gloopProperties": [
+                                {
+                                    "name": "name"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "outputs": [
+                {
+                    "from": [
+                        "name"
+                    ],
+                    "to": [
+                        "database",
+                        "name"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "invokeGloop",
+            "name": "com.torocloud.mock.conversation.thread.message._InsertMessage",
+            "inputs": [
+                {
+                    "from": [
+                        "body"
+                    ],
+                    "to": [
+                        "_InsertMessageInput",
+                        "body"
+                    ]
+                },
+                {
+                    "from": [
+                        "from"
+                    ],
+                    "to": [
+                        "_InsertMessageInput",
+                        "participantId"
+                    ]
+                },
+                {
+                    "from": [
+                        "threadId"
+                    ],
+                    "to": [
+                        "_InsertMessageInput",
+                        "threadId"
+                    ]
+                },
+                {
+                    "from": [
+                        "database",
+                        "name"
+                    ],
+                    "to": [
+                        "_InsertMessageInput",
+                        "$martiniConnectionPool"
+                    ]
+                },
+                {
+                    "type": "set",
+                    "expression": "UUID.randomUUID().toString()",
+                    "evaluate": true,
+                    "to": [
+                        "_InsertMessageInput",
+                        "id"
+                    ]
+                },
+                {
+                    "type": "set",
+                    "expression": "false",
+                    "to": [
+                        "_InsertMessageInput",
+                        "$getGeneratedKeys"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "invokeGloop",
+            "name": "com.torocloud.mock.conversation.thread.UnarchiveThread",
+            "inputs": [
+                {
+                    "from": [
+                        "threadId"
+                    ],
+                    "to": [
+                        "threadId"
+                    ]
+                },
+                {
+                    "from": [
+                        "from"
+                    ],
+                    "to": [
+                        "participantId"
+                    ]
+                }
+            ]
+        }
+    ]
+}

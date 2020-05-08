@@ -1,0 +1,45 @@
+{
+    "type": "customSql",
+    "input": [
+        {
+            "name": "_InsertMessageInput",
+            "type": "model",
+            "gloopProperties": [
+                {
+                    "name": "$martiniConnectionPool"
+                },
+                {
+                    "name": "$getGeneratedKeys",
+                    "type": "boolean",
+                    "defaultValue": false
+                },
+                {
+                    "name": "id"
+                },
+                {
+                    "name": "body"
+                },
+                {
+                    "name": "participantId"
+                },
+                {
+                    "name": "threadId"
+                }
+            ]
+        }
+    ],
+    "output": [
+        {
+            "name": "updateCount",
+            "type": "integer"
+        },
+        {
+            "name": "generatedKeys",
+            "type": "model",
+            "allowExtraProperties": true
+        }
+    ],
+    "connectionPoolName": "mock_conversation_api",
+    "sqlType": "INSERT",
+    "query": "INSERT INTO \n\t\"MESSAGES\" (\"ID\", \"BODY\", \"PARTICIPANT_ID\", \"THREAD_ID\")\nVALUES \n\t(:id, :body, :participantId, :threadId);"
+}

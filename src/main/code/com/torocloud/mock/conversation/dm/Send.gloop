@@ -1,0 +1,303 @@
+{
+    "comments": "Sends a direct message to another participant",
+    "input": [
+        {
+            "name": "X_USERNAME",
+            "allowNull": false,
+            "comments": "The sender participant id"
+        },
+        {
+            "name": "to",
+            "allowNull": false,
+            "comments": "The recipient participant id"
+        },
+        {
+            "name": "body",
+            "allowNull": false,
+            "comments": "The message content"
+        }
+    ],
+    "output": [
+        {
+            "name": "responseCode",
+            "type": "integer"
+        },
+        {
+            "name": "response204",
+            "type": "object",
+            "comments": "When the message is sent"
+        },
+        {
+            "name": "response400",
+            "type": "model",
+            "comments": "When the participant does not exist",
+            "reference": "io.toro.martini.api.APIException"
+        },
+        {
+            "name": "response500",
+            "type": "model",
+            "comments": "When the exception is unhandled",
+            "reference": "io.toro.martini.api.APIException"
+        }
+    ],
+    "steps": [
+        {
+            "type": "invokeGloop",
+            "name": "com.torocloud.mock.conversation.thread.participant.GetParticipantByName",
+            "declare": [
+                {
+                    "variables": [
+                        {
+                            "name": "error",
+                            "type": "model",
+                            "reference": "com.torocloud.mock.conversation.Error"
+                        },
+                        {
+                            "name": "thisParticipant",
+                            "type": "model",
+                            "reference": "com.torocloud.mock.conversation.thread.participant.Participant"
+                        }
+                    ]
+                }
+            ],
+            "inputs": [
+                {
+                    "from": [
+                        "X_USERNAME"
+                    ],
+                    "to": [
+                        "participantName"
+                    ]
+                }
+            ],
+            "outputs": [
+                {
+                    "from": [
+                        "error"
+                    ],
+                    "to": [
+                        "error"
+                    ]
+                },
+                {
+                    "from": [
+                        "match"
+                    ],
+                    "to": [
+                        "thisParticipant"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "fork",
+            "comments": "Is the sender a registered participant?",
+            "expression": "error.code == null",
+            "children": [
+                {
+                    "type": "block",
+                    "label": "true",
+                    "children": [
+                        {
+                            "type": "invokeGloop",
+                            "name": "com.torocloud.mock.conversation.thread.participant.GetParticipantByName",
+                            "declare": [
+                                {
+                                    "variables": [
+                                        {
+                                            "name": "thatParticipant",
+                                            "type": "model",
+                                            "reference": "com.torocloud.mock.conversation.thread.participant.Participant"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "inputs": [
+                                {
+                                    "from": [
+                                        "to"
+                                    ],
+                                    "to": [
+                                        "participantName"
+                                    ]
+                                }
+                            ],
+                            "outputs": [
+                                {
+                                    "from": [
+                                        "error"
+                                    ],
+                                    "to": [
+                                        "error"
+                                    ]
+                                },
+                                {
+                                    "from": [
+                                        "match"
+                                    ],
+                                    "to": [
+                                        "thatParticipant"
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "fork",
+                            "comments": "Is the recipient a registered participant?",
+                            "expression": "error.code == null",
+                            "children": [
+                                {
+                                    "type": "block",
+                                    "label": "true",
+                                    "children": [
+                                        {
+                                            "type": "invokeGloop",
+                                            "name": "com.torocloud.mock.conversation.thread.message.SendDirectMessage",
+                                            "inputs": [
+                                                {
+                                                    "from": [
+                                                        "body"
+                                                    ],
+                                                    "to": [
+                                                        "body"
+                                                    ]
+                                                },
+                                                {
+                                                    "from": [
+                                                        "thisParticipant",
+                                                        "id"
+                                                    ],
+                                                    "to": [
+                                                        "from"
+                                                    ]
+                                                },
+                                                {
+                                                    "from": [
+                                                        "thatParticipant",
+                                                        "id"
+                                                    ],
+                                                    "to": [
+                                                        "to"
+                                                    ]
+                                                }
+                                            ],
+                                            "outputs": [
+                                                {
+                                                    "from": [
+                                                        "error"
+                                                    ],
+                                                    "to": [
+                                                        "error"
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "type": "fork",
+                                            "comments": "Was sent?",
+                                            "expression": "error.code == null",
+                                            "children": [
+                                                {
+                                                    "type": "block",
+                                                    "label": "true",
+                                                    "children": [
+                                                        {
+                                                            "comments": "No Content",
+                                                            "lines": [
+                                                                {
+                                                                    "type": "set",
+                                                                    "expression": "204",
+                                                                    "to": [
+                                                                        "responseCode"
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        },
+                                                        {
+                                                            "type": "break",
+                                                            "expression": "$gloopService"
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "fork",
+            "expression": "error.code",
+            "children": [
+                {
+                    "label": "NO_SUCH_PARTICIPANT",
+                    "comments": "400 - Bad Request",
+                    "lines": [
+                        {
+                            "from": [
+                                "error",
+                                "message"
+                            ],
+                            "to": [
+                                "response400",
+                                "message"
+                            ]
+                        },
+                        {
+                            "type": "set",
+                            "expression": "400",
+                            "to": [
+                                "responseCode"
+                            ]
+                        },
+                        {
+                            "type": "set",
+                            "expression": "error.code.getValue()",
+                            "evaluate": true,
+                            "to": [
+                                "response400",
+                                "apiErrorCode"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "$else",
+                    "comments": "500 - Internal Server Error",
+                    "lines": [
+                        {
+                            "from": [
+                                "error",
+                                "message"
+                            ],
+                            "to": [
+                                "response500",
+                                "message"
+                            ]
+                        },
+                        {
+                            "type": "set",
+                            "expression": "error.code.getValue()",
+                            "evaluate": true,
+                            "to": [
+                                "response500",
+                                "apiErrorCode"
+                            ]
+                        },
+                        {
+                            "type": "set",
+                            "expression": "500",
+                            "to": [
+                                "responseCode"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,301 @@
+{
+    "comments": "Creates a new thread between participants",
+    "input": [
+        {
+            "name": "participant1",
+            "comments": "The id of the first participant"
+        },
+        {
+            "name": "participant2",
+            "comments": "The id of the second participant"
+        }
+    ],
+    "output": [
+        {
+            "name": "threadId",
+            "comments": "The created thread id"
+        },
+        {
+            "name": "error",
+            "type": "model",
+            "reference": "com.torocloud.mock.conversation.Error"
+        }
+    ],
+    "steps": [
+        {
+            "type": "block",
+            "comments": "Preconditions",
+            "children": [
+                {
+                    "type": "invokeGloop",
+                    "name": "com.torocloud.mock.conversation.thread.participant.GetParticipantById",
+                    "declare": [
+                        {
+                            "variables": [
+                                {
+                                    "name": "participant1Obj",
+                                    "type": "model",
+                                    "reference": "com.torocloud.mock.conversation.thread.participant.Participant"
+                                }
+                            ]
+                        }
+                    ],
+                    "inputs": [
+                        {
+                            "from": [
+                                "participant1"
+                            ],
+                            "to": [
+                                "participantId"
+                            ]
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "from": [
+                                "error"
+                            ],
+                            "to": [
+                                "error"
+                            ]
+                        },
+                        {
+                            "from": [
+                                "match"
+                            ],
+                            "to": [
+                                "participant1Obj"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "fork",
+                    "comments": "Was the first participant found?",
+                    "expression": "error.code != null",
+                    "children": [
+                        {
+                            "type": "break",
+                            "label": "true",
+                            "expression": "$gloopService"
+                        }
+                    ]
+                },
+                {
+                    "type": "invokeGloop",
+                    "name": "com.torocloud.mock.conversation.thread.participant.GetParticipantById",
+                    "declare": [
+                        {
+                            "variables": [
+                                {
+                                    "name": "participant2Obj",
+                                    "type": "model",
+                                    "reference": "com.torocloud.mock.conversation.thread.participant.Participant"
+                                }
+                            ]
+                        }
+                    ],
+                    "inputs": [
+                        {
+                            "from": [
+                                "participant2"
+                            ],
+                            "to": [
+                                "participantId"
+                            ]
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "from": [
+                                "match"
+                            ],
+                            "to": [
+                                "participant2Obj"
+                            ]
+                        },
+                        {
+                            "from": [
+                                "error"
+                            ],
+                            "to": [
+                                "error"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "fork",
+                    "comments": "Was the second participant found?",
+                    "expression": "error.code != null",
+                    "children": [
+                        {
+                            "type": "break",
+                            "label": "true",
+                            "expression": "$gloopService"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "lines": [
+                {
+                    "type": "set",
+                    "expression": "UUID.randomUUID().toString()",
+                    "evaluate": true,
+                    "to": [
+                        "threadId"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "invokeGloop",
+            "name": "com.torocloud.mock.conversation.configuration.DataSourceProperties",
+            "declare": [
+                {
+                    "variables": [
+                        {
+                            "name": "database",
+                            "type": "model",
+                            "gloopProperties": [
+                                {
+                                    "name": "name"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "outputs": [
+                {
+                    "from": [
+                        "name"
+                    ],
+                    "to": [
+                        "database",
+                        "name"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "invokeGloop",
+            "name": "com.torocloud.mock.conversation.thread._CreateNewThread",
+            "inputs": [
+                {
+                    "from": [
+                        "database",
+                        "name"
+                    ],
+                    "to": [
+                        "_CreateNewThreadInput",
+                        "$martiniConnectionPool"
+                    ]
+                },
+                {
+                    "from": [
+                        "threadId"
+                    ],
+                    "to": [
+                        "_CreateNewThreadInput",
+                        "id"
+                    ]
+                },
+                {
+                    "type": "set",
+                    "expression": "false",
+                    "to": [
+                        "_CreateNewThreadInput",
+                        "$getGeneratedKeys"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "invokeGloop",
+            "name": "com.torocloud.mock.conversation.thread._AddParticipantToThread",
+            "inputs": [
+                {
+                    "from": [
+                        "database",
+                        "name"
+                    ],
+                    "to": [
+                        "_AddParticipantToThreadInput",
+                        "$martiniConnectionPool"
+                    ]
+                },
+                {
+                    "from": [
+                        "threadId"
+                    ],
+                    "to": [
+                        "_AddParticipantToThreadInput",
+                        "threadId"
+                    ]
+                },
+                {
+                    "from": [
+                        "participant1"
+                    ],
+                    "to": [
+                        "_AddParticipantToThreadInput",
+                        "participantId"
+                    ]
+                },
+                {
+                    "type": "set",
+                    "expression": "false",
+                    "to": [
+                        "_AddParticipantToThreadInput",
+                        "$getGeneratedKeys"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "invokeGloop",
+            "name": "com.torocloud.mock.conversation.thread._AddParticipantToThread",
+            "inputs": [
+                {
+                    "from": [
+                        "database",
+                        "name"
+                    ],
+                    "to": [
+                        "_AddParticipantToThreadInput",
+                        "$martiniConnectionPool"
+                    ]
+                },
+                {
+                    "from": [
+                        "participant2"
+                    ],
+                    "to": [
+                        "_AddParticipantToThreadInput",
+                        "participantId"
+                    ]
+                },
+                {
+                    "from": [
+                        "threadId"
+                    ],
+                    "to": [
+                        "_AddParticipantToThreadInput",
+                        "threadId"
+                    ]
+                },
+                {
+                    "type": "set",
+                    "expression": "false",
+                    "to": [
+                        "_AddParticipantToThreadInput",
+                        "$getGeneratedKeys"
+                    ]
+                }
+            ]
+        }
+    ]
+}

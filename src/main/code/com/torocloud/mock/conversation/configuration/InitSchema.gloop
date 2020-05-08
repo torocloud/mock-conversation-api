@@ -1,0 +1,587 @@
+{
+    "steps": [
+        {
+            "type": "invokeGloop",
+            "name": "com.torocloud.mock.conversation.configuration.DataSourceProperties",
+            "declare": [
+                {
+                    "variables": [
+                        {
+                            "name": "database",
+                            "type": "model",
+                            "gloopProperties": [
+                                {
+                                    "name": "name"
+                                },
+                                {
+                                    "name": "driverClassName"
+                                },
+                                {
+                                    "name": "url"
+                                },
+                                {
+                                    "name": "username"
+                                },
+                                {
+                                    "name": "password"
+                                },
+                                {
+                                    "name": "prepopulate",
+                                    "type": "boolean"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "outputs": [
+                {
+                    "from": [
+                        "name"
+                    ],
+                    "to": [
+                        "database",
+                        "name"
+                    ]
+                },
+                {
+                    "from": [
+                        "driverClassName"
+                    ],
+                    "to": [
+                        "database",
+                        "driverClassName"
+                    ]
+                },
+                {
+                    "from": [
+                        "url"
+                    ],
+                    "to": [
+                        "database",
+                        "url"
+                    ]
+                },
+                {
+                    "from": [
+                        "username"
+                    ],
+                    "to": [
+                        "database",
+                        "username"
+                    ]
+                },
+                {
+                    "from": [
+                        "password"
+                    ],
+                    "to": [
+                        "database",
+                        "password"
+                    ]
+                },
+                {
+                    "from": [
+                        "prepopulate"
+                    ],
+                    "to": [
+                        "database",
+                        "prepopulate"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "invokeCode",
+            "label": "true",
+            "className": "io.toro.martini.GloopMethods",
+            "methodName": "setSystemProperty",
+            "parameters": [
+                "java.lang.String",
+                "java.lang.String"
+            ],
+            "inputs": [
+                {
+                    "type": "set",
+                    "expression": "oracle.jdbc.J2EE13Compliant",
+                    "to": [
+                        "name"
+                    ]
+                },
+                {
+                    "type": "set",
+                    "expression": "true",
+                    "to": [
+                        "value"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "invokeCode",
+            "comments": "Check whether the connection pool already exists",
+            "declare": [
+                {
+                    "variables": [
+                        {
+                            "name": "connectionPoolExists",
+                            "type": "boolean",
+                            "allowNull": false
+                        },
+                        {
+                            "name": "dateType"
+                        }
+                    ]
+                }
+            ],
+            "className": "io.toro.martini.DatabaseConnectionPoolMethods",
+            "methodName": "containsConnectionWithName",
+            "parameters": [
+                "java.lang.String"
+            ],
+            "inputs": [
+                {
+                    "from": [
+                        "database",
+                        "name"
+                    ],
+                    "to": [
+                        "name"
+                    ]
+                }
+            ],
+            "outputs": [
+                {
+                    "from": [
+                        "output"
+                    ],
+                    "to": [
+                        "connectionPoolExists"
+                    ]
+                },
+                {
+                    "type": "set",
+                    "expression": "'database.type'.getPackageProperty().equalsIgnoreCase( 'mssql' ) ? 'DATETIME' : 'TIMESTAMP'",
+                    "evaluate": true,
+                    "to": [
+                        "dateType"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "fork",
+            "comments": "Is the connection pool already configured?",
+            "expression": "connectionPoolExists",
+            "children": [
+                {
+                    "type": "break",
+                    "label": "true",
+                    "expression": "$gloopService"
+                }
+            ]
+        },
+        {
+            "type": "block",
+            "comments": "Let's configure one",
+            "children": [
+                {
+                    "type": "invokeCode",
+                    "comments": "Create a connection pool",
+                    "className": "io.toro.martini.DatabaseConnectionPoolMethods",
+                    "methodName": "savePool",
+                    "parameters": [
+                        "io.toro.gloop.object.property.GloopModel"
+                    ],
+                    "inputs": [
+                        {
+                            "from": [
+                                "database",
+                                "name"
+                            ],
+                            "to": [
+                                "connectionPoolInfo",
+                                "name"
+                            ]
+                        },
+                        {
+                            "from": [
+                                "database",
+                                "driverClassName"
+                            ],
+                            "to": [
+                                "connectionPoolInfo",
+                                "driverClass"
+                            ]
+                        },
+                        {
+                            "from": [
+                                "database",
+                                "url"
+                            ],
+                            "to": [
+                                "connectionPoolInfo",
+                                "url"
+                            ]
+                        },
+                        {
+                            "from": [
+                                "database",
+                                "username"
+                            ],
+                            "to": [
+                                "connectionPoolInfo",
+                                "username"
+                            ]
+                        },
+                        {
+                            "from": [
+                                "database",
+                                "password"
+                            ],
+                            "to": [
+                                "connectionPoolInfo",
+                                "password"
+                            ]
+                        },
+                        {
+                            "type": "set",
+                            "expression": "true",
+                            "to": [
+                                "connectionPoolInfo",
+                                "enabled"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "block",
+                    "comments": "Ensure pool is started; otherwise, perform clean up",
+                    "blockType": "TRY_CATCH",
+                    "children": [
+                        {
+                            "type": "invokeCode",
+                            "className": "io.toro.martini.DatabaseConnectionPoolMethods",
+                            "methodName": "startPool",
+                            "parameters": [
+                                "java.lang.String"
+                            ],
+                            "inputs": [
+                                {
+                                    "from": [
+                                        "database",
+                                        "name"
+                                    ],
+                                    "to": [
+                                        "name"
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "invokeCode",
+                            "comments": "Create PARTICIPANTS table",
+                            "className": "io.toro.martini.SqlMethods",
+                            "methodName": "sql",
+                            "parameters": [
+                                "java.lang.String",
+                                "groovy.lang.Closure"
+                            ],
+                            "inputs": [
+                                {
+                                    "from": [
+                                        "database",
+                                        "name"
+                                    ],
+                                    "to": [
+                                        "poolName"
+                                    ]
+                                },
+                                {
+                                    "type": "set",
+                                    "expression": "{\tsql ->\n\tsql.execute \"\"\"\nCREATE TABLE \"PARTICIPANTS\" (\n    \"ID\" VARCHAR(50) PRIMARY KEY,\n    \"NAME\" VARCHAR(50) UNIQUE,\n    \"DATE_CREATED\" $dateType DEFAULT CURRENT_TIMESTAMP\n);\"\"\".toString()\n}",
+                                    "evaluate": true,
+                                    "to": [
+                                        "c"
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "invokeCode",
+                            "label": " ",
+                            "comments": "Create THREADS table",
+                            "className": "io.toro.martini.SqlMethods",
+                            "methodName": "sql",
+                            "parameters": [
+                                "java.lang.String",
+                                "groovy.lang.Closure"
+                            ],
+                            "inputs": [
+                                {
+                                    "from": [
+                                        "database",
+                                        "name"
+                                    ],
+                                    "to": [
+                                        "poolName"
+                                    ]
+                                },
+                                {
+                                    "type": "set",
+                                    "expression": "{\tsql ->\n\tsql.execute \"\"\"\nCREATE TABLE \"THREADS\" (\n    \"ID\" VARCHAR(50) PRIMARY KEY,        \n    \"DATE_CREATED\" $dateType DEFAULT CURRENT_TIMESTAMP(6)\n);\"\"\".toString()\n}",
+                                    "evaluate": true,
+                                    "to": [
+                                        "c"
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "invokeCode",
+                            "label": "  ",
+                            "comments": "Create THREAD_PARTICIPANTS table",
+                            "className": "io.toro.martini.SqlMethods",
+                            "methodName": "sql",
+                            "parameters": [
+                                "java.lang.String",
+                                "groovy.lang.Closure"
+                            ],
+                            "inputs": [
+                                {
+                                    "from": [
+                                        "database",
+                                        "name"
+                                    ],
+                                    "to": [
+                                        "poolName"
+                                    ]
+                                },
+                                {
+                                    "type": "set",
+                                    "expression": "{\tsql ->\n\tsql.execute ( '''\nCREATE TABLE \"THREAD_PARTICIPANTS\" (\n  \"PARTICIPANT_ID\" VARCHAR(50) NOT NULL,\n  \"THREAD_ID\" VARCHAR(50) NOT NULL,\n  \"ARCHIVED\" INTEGER NOT NULL DEFAULT 0,\n  CONSTRAINT \"FK_TP_PARTICIPANT\" FOREIGN KEY (\"PARTICIPANT_ID\") REFERENCES \"PARTICIPANTS\"(\"ID\"),\n  CONSTRAINT \"FK_TP_THREAD\" FOREIGN KEY (\"THREAD_ID\") REFERENCES \"THREADS\"(\"ID\"),\n  PRIMARY KEY (\"PARTICIPANT_ID\", \"THREAD_ID\")\n);''' )\n}",
+                                    "evaluate": true,
+                                    "to": [
+                                        "c"
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "invokeCode",
+                            "label": "   ",
+                            "comments": "Create MESSAGES table",
+                            "className": "io.toro.martini.SqlMethods",
+                            "methodName": "sql",
+                            "parameters": [
+                                "java.lang.String",
+                                "groovy.lang.Closure"
+                            ],
+                            "inputs": [
+                                {
+                                    "from": [
+                                        "database",
+                                        "name"
+                                    ],
+                                    "to": [
+                                        "poolName"
+                                    ]
+                                },
+                                {
+                                    "type": "set",
+                                    "expression": "{\tsql ->\n\tsql.execute \"\"\"\nCREATE TABLE \"MESSAGES\" (\n    \"ID\" VARCHAR(50) PRIMARY KEY,\n    \"BODY\" TEXT NOT NULL,\n    \"DATE_CREATED\" $dateType DEFAULT CURRENT_TIMESTAMP(6),\n    \"PARTICIPANT_ID\" VARCHAR(50) NOT NULL,\n    \"THREAD_ID\" VARCHAR(50) NOT NULL,\n    CONSTRAINT \"FK_M_PARTICIPANT\" FOREIGN KEY (\"PARTICIPANT_ID\") REFERENCES \"PARTICIPANTS\"(\"ID\"),\n    CONSTRAINT \"FK_M_THREAD\" FOREIGN KEY (\"THREAD_ID\") REFERENCES \"THREADS\"(\"ID\")\n);\"\"\".toString()\n}",
+                                    "evaluate": true,
+                                    "to": [
+                                        "c"
+                                    ]
+                                }
+                            ]
+                        }
+                    ],
+                    "catch": [
+                        {
+                            "type": "invokeCode",
+                            "className": "io.toro.martini.LoggerMethods",
+                            "methodName": "error",
+                            "parameters": [
+                                "java.lang.String",
+                                "java.lang.Throwable"
+                            ],
+                            "inputs": [
+                                {
+                                    "from": [
+                                        "$gloopException",
+                                        "realException"
+                                    ],
+                                    "to": [
+                                        "throwable"
+                                    ]
+                                },
+                                {
+                                    "type": "set",
+                                    "expression": "\"Could not start pool for '$database.name', so the pool is going to be deleted...\"",
+                                    "evaluate": true,
+                                    "to": [
+                                        "message"
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "invokeCode",
+                            "className": "io.toro.martini.DatabaseConnectionPoolMethods",
+                            "methodName": "deletePool",
+                            "parameters": [
+                                "java.lang.String"
+                            ],
+                            "inputs": [
+                                {
+                                    "from": [
+                                        "database",
+                                        "name"
+                                    ],
+                                    "to": [
+                                        "name"
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "fork",
+            "comments": "Should we insert dummy data?",
+            "expression": "database.prepopulate",
+            "children": [
+                {
+                    "type": "block",
+                    "label": "true",
+                    "children": [
+                        {
+                            "type": "invokeCode",
+                            "comments": "Truncate MESSAGES table",
+                            "className": "io.toro.martini.SqlMethods",
+                            "methodName": "sql",
+                            "parameters": [
+                                "java.lang.String",
+                                "groovy.lang.Closure"
+                            ],
+                            "inputs": [
+                                {
+                                    "from": [
+                                        "database",
+                                        "name"
+                                    ],
+                                    "to": [
+                                        "poolName"
+                                    ]
+                                },
+                                {
+                                    "type": "set",
+                                    "expression": "{ sql -> sql.execute ( 'DELETE FROM \"MESSAGES\";' ) }",
+                                    "evaluate": true,
+                                    "to": [
+                                        "c"
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "invokeCode",
+                            "comments": "Truncate THREAD_PARTICIPANTS table",
+                            "className": "io.toro.martini.SqlMethods",
+                            "methodName": "sql",
+                            "parameters": [
+                                "java.lang.String",
+                                "groovy.lang.Closure"
+                            ],
+                            "inputs": [
+                                {
+                                    "from": [
+                                        "database",
+                                        "name"
+                                    ],
+                                    "to": [
+                                        "poolName"
+                                    ]
+                                },
+                                {
+                                    "type": "set",
+                                    "expression": "{ sql -> sql.execute ( 'DELETE FROM \"THREAD_PARTICIPANTS\";' ) }",
+                                    "evaluate": true,
+                                    "to": [
+                                        "c"
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "invokeCode",
+                            "comments": "Truncate THREADS table",
+                            "className": "io.toro.martini.SqlMethods",
+                            "methodName": "sql",
+                            "parameters": [
+                                "java.lang.String",
+                                "groovy.lang.Closure"
+                            ],
+                            "inputs": [
+                                {
+                                    "from": [
+                                        "database",
+                                        "name"
+                                    ],
+                                    "to": [
+                                        "poolName"
+                                    ]
+                                },
+                                {
+                                    "type": "set",
+                                    "expression": "{ sql -> sql.execute ( 'DELETE FROM \"THREADS\";' ) }",
+                                    "evaluate": true,
+                                    "to": [
+                                        "c"
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "invokeCode",
+                            "comments": "Truncate PARTICIPANTS table",
+                            "className": "io.toro.martini.SqlMethods",
+                            "methodName": "sql",
+                            "parameters": [
+                                "java.lang.String",
+                                "groovy.lang.Closure"
+                            ],
+                            "inputs": [
+                                {
+                                    "from": [
+                                        "database",
+                                        "name"
+                                    ],
+                                    "to": [
+                                        "poolName"
+                                    ]
+                                },
+                                {
+                                    "type": "set",
+                                    "expression": "{ sql -> sql.execute ( 'DELETE FROM \"PARTICIPANTS\";' ) }",
+                                    "evaluate": true,
+                                    "to": [
+                                        "c"
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "invokeGloop",
+                            "name": "com.torocloud.mock.conversation.generator.GenerateAll"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,278 @@
+{
+    "comments": "Returns all threads where this participant is in",
+    "input": [
+        {
+            "name": "participantId",
+            "comments": "The current participant id"
+        }
+    ],
+    "output": [
+        {
+            "name": "threads",
+            "type": "model",
+            "array": true,
+            "comments": "The threads where this participant is in",
+            "gloopProperties": [
+                {
+                    "name": "id"
+                },
+                {
+                    "name": "participants",
+                    "type": "model",
+                    "array": true,
+                    "reference": "com.torocloud.mock.conversation.thread.participant.Participant"
+                }
+            ]
+        },
+        {
+            "name": "error",
+            "type": "model",
+            "comments": "Populated when the provided participant is not found",
+            "reference": "com.torocloud.mock.conversation.Error"
+        }
+    ],
+    "steps": [
+        {
+            "type": "invokeGloop",
+            "name": "com.torocloud.mock.conversation.configuration.DataSourceProperties",
+            "declare": [
+                {
+                    "variables": [
+                        {
+                            "name": "database",
+                            "type": "model",
+                            "gloopProperties": [
+                                {
+                                    "name": "name"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "outputs": [
+                {
+                    "from": [
+                        "name"
+                    ],
+                    "to": [
+                        "database",
+                        "name"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "invokeGloop",
+            "comments": "Fetch the matching participant",
+            "name": "com.torocloud.mock.conversation.thread.participant._FindParticipantById",
+            "declare": [
+                {
+                    "variables": [
+                        {
+                            "name": "matchingParticipant",
+                            "type": "model",
+                            "gloopProperties": [
+                                {
+                                    "name": "ID",
+                                    "required": true,
+                                    "allowNull": false
+                                },
+                                {
+                                    "name": "NAME",
+                                    "required": true
+                                },
+                                {
+                                    "name": "DATE_CREATED",
+                                    "type": "date",
+                                    "required": true
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "inputs": [
+                {
+                    "from": [
+                        "database",
+                        "name"
+                    ],
+                    "to": [
+                        "_FindParticipantByIdInput",
+                        "$martiniConnectionPool"
+                    ]
+                },
+                {
+                    "from": [
+                        "participantId"
+                    ],
+                    "to": [
+                        "_FindParticipantByIdInput",
+                        "participantId"
+                    ]
+                }
+            ],
+            "outputs": [
+                {
+                    "from": [
+                        "_FindParticipantByIdOutput"
+                    ],
+                    "to": [
+                        "matchingParticipant"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "fork",
+            "comments": "Does the participant exist?",
+            "expression": "matchingParticipant.ID != null",
+            "children": [
+                {
+                    "type": "block",
+                    "label": "true",
+                    "comments": "Return the threads where the participant is in",
+                    "children": [
+                        {
+                            "type": "invokeGloop",
+                            "name": "com.torocloud.mock.conversation.thread._FindThreadsByParticipant",
+                            "declare": [
+                                {
+                                    "variables": [
+                                        {
+                                            "name": "threadCursor",
+                                            "type": "model",
+                                            "array": true,
+                                            "gloopProperties": [
+                                                {
+                                                    "name": "THREAD_ID",
+                                                    "required": true,
+                                                    "allowNull": false
+                                                },
+                                                {
+                                                    "name": "PARTICIPANT_ID",
+                                                    "required": true
+                                                },
+                                                {
+                                                    "name": "PARTICIPANT_NAME",
+                                                    "required": true
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ],
+                            "inputs": [
+                                {
+                                    "from": [
+                                        "participantId"
+                                    ],
+                                    "to": [
+                                        "_FindThreadsByParticipantInput",
+                                        "participantId"
+                                    ]
+                                },
+                                {
+                                    "from": [
+                                        "database",
+                                        "name"
+                                    ],
+                                    "to": [
+                                        "_FindThreadsByParticipantInput",
+                                        "$martiniConnectionPool"
+                                    ]
+                                }
+                            ],
+                            "outputs": [
+                                {
+                                    "from": [
+                                        "_FindThreadsByParticipantInputCursor"
+                                    ],
+                                    "to": [
+                                        "threadCursor"
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "iterate",
+                            "input": {
+                                "path": [
+                                    "threadCursor"
+                                ]
+                            },
+                            "output": {
+                                "path": [
+                                    "threads"
+                                ]
+                            },
+                            "children": [
+                                {
+                                    "lines": [
+                                        {
+                                            "from": [
+                                                "threadCursor",
+                                                "THREAD_ID"
+                                            ],
+                                            "to": [
+                                                "threads",
+                                                "id"
+                                            ]
+                                        },
+                                        {
+                                            "from": [
+                                                "threadCursor",
+                                                "PARTICIPANT_ID"
+                                            ],
+                                            "to": [
+                                                "threads",
+                                                "participants",
+                                                "id"
+                                            ]
+                                        },
+                                        {
+                                            "from": [
+                                                "threadCursor",
+                                                "PARTICIPANT_NAME"
+                                            ],
+                                            "to": [
+                                                "threads",
+                                                "participants",
+                                                "name"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "false",
+                    "comments": "Return an error object instead",
+                    "lines": [
+                        {
+                            "type": "set",
+                            "expression": "com.torocloud.mock.conversation.Code.NO_SUCH_PARTICIPANT",
+                            "evaluate": true,
+                            "to": [
+                                "error",
+                                "code"
+                            ]
+                        },
+                        {
+                            "type": "set",
+                            "expression": "\"No such participant was found with id '$participantId'\"",
+                            "evaluate": true,
+                            "to": [
+                                "error",
+                                "message"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,16 @@
+{
+    "name": "Error",
+    "type": "model",
+    "gloopProperties": [
+        {
+            "name": "code",
+            "type": "object",
+            "comments": "The business-level error code",
+            "objectClassName": "com.torocloud.mock.conversation.Code"
+        },
+        {
+            "name": "message",
+            "comments": "The actual error message"
+        }
+    ]
+}

@@ -1,0 +1,46 @@
+{
+    "type": "customSql",
+    "input": [
+        {
+            "name": "_FindThreadBetweenInput",
+            "type": "model",
+            "gloopProperties": [
+                {
+                    "name": "$martiniConnectionPool"
+                },
+                {
+                    "name": "left"
+                },
+                {
+                    "name": "right"
+                }
+            ]
+        }
+    ],
+    "output": [
+        {
+            "name": "_FindThreadBetweenOutput",
+            "type": "model",
+            "gloopProperties": [
+                {
+                    "name": "THREAD_ID",
+                    "required": true
+                },
+                {
+                    "name": "DATE_CREATED",
+                    "type": "date",
+                    "required": true
+                },
+                {
+                    "name": "ARCHIVED",
+                    "type": "integer",
+                    "required": true,
+                    "allowNull": false
+                }
+            ]
+        }
+    ],
+    "connectionPoolName": "mock_conversation_api",
+    "sqlType": "SELECT_SINGLE",
+    "query": "SELECT DISTINCT \n  \"T\".\"ID\" AS \"THREAD_ID\",\n  \"T\".\"DATE_CREATED\" AS \"DATE_CREATED\",\n  \"LTP\".\"ARCHIVED\" AS \"ARCHIVED\"\nFROM \n  \"THREAD_PARTICIPANTS\" \"LTP\"\nINNER JOIN\n  \"THREAD_PARTICIPANTS\" \"RTP\"\n  ON \n  \"LTP\".\"THREAD_ID\" = \"RTP\".\"THREAD_ID\"\nLEFT JOIN\n  \"THREADS\" \"T\"\n  ON\n  \"LTP\".\"THREAD_ID\" = \"T\".\"ID\"\nWHERE\n  \"LTP\".\"PARTICIPANT_ID\" = :left\n  AND\n  \"RTP\".\"PARTICIPANT_ID\" = :right;"
+}

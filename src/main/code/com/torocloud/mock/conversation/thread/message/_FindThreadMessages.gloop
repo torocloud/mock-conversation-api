@@ -1,0 +1,62 @@
+{
+    "type": "customSql",
+    "input": [
+        {
+            "name": "_FindThreadMessagesInput",
+            "type": "model",
+            "gloopProperties": [
+                {
+                    "name": "$martiniConnectionPool"
+                },
+                {
+                    "name": "$limit",
+                    "type": "long"
+                },
+                {
+                    "name": "threadId"
+                },
+                {
+                    "name": "skip",
+                    "type": "long"
+                }
+            ]
+        }
+    ],
+    "output": [
+        {
+            "name": "_FindThreadMessagesInputCursor",
+            "type": "model",
+            "array": true,
+            "gloopProperties": [
+                {
+                    "name": "ID",
+                    "required": true,
+                    "allowNull": false
+                },
+                {
+                    "name": "BODY",
+                    "required": true,
+                    "allowNull": false
+                },
+                {
+                    "name": "DATE_CREATED",
+                    "type": "date",
+                    "required": true
+                },
+                {
+                    "name": "PARTICIPANT_ID",
+                    "required": true,
+                    "allowNull": false
+                },
+                {
+                    "name": "THREAD_ID",
+                    "required": true,
+                    "allowNull": false
+                }
+            ]
+        }
+    ],
+    "connectionPoolName": "mock_conversation_api",
+    "sqlType": "SELECT_MULTI",
+    "query": "SELECT \n  * \nFROM \n  \"MESSAGES\"\nWHERE\n  \"THREAD_ID\" = :threadId\nORDER BY \"DATE_CREATED\" DESC\nLIMIT :$limit\nOFFSET :skip"
+}

@@ -1,0 +1,44 @@
+{
+    "type": "customSql",
+    "input": [
+        {
+            "name": "_FindParticipantsInput",
+            "type": "model",
+            "gloopProperties": [
+                {
+                    "name": "$martiniConnectionPool"
+                },
+                {
+                    "name": "$limit",
+                    "type": "integer"
+                }
+            ]
+        }
+    ],
+    "output": [
+        {
+            "name": "_FindParticipantsInputCursor",
+            "type": "model",
+            "array": true,
+            "gloopProperties": [
+                {
+                    "name": "ID",
+                    "required": true,
+                    "allowNull": false
+                },
+                {
+                    "name": "NAME",
+                    "required": true
+                },
+                {
+                    "name": "DATE_CREATED",
+                    "type": "date",
+                    "required": true
+                }
+            ]
+        }
+    ],
+    "connectionPoolName": "mock_conversation_api",
+    "sqlType": "SELECT_MULTI",
+    "query": "SELECT * FROM \"PARTICIPANTS\""
+}

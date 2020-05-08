@@ -1,0 +1,270 @@
+{
+    "comments": "Generates mock data for the conversation api",
+    "input": [
+        {
+            "name": "name1",
+            "allowNull": false,
+            "defaultValue": "hanzo",
+            "comments": "Name of the first participant"
+        },
+        {
+            "name": "name2",
+            "allowNull": false,
+            "defaultValue": "kotaro",
+            "comments": "Name of the second participant"
+        },
+        {
+            "name": "count",
+            "type": "integer",
+            "allowNull": false,
+            "defaultValue": 10,
+            "comments": "The number of messages to generate"
+        }
+    ],
+    "steps": [
+        {
+            "declare": [
+                {
+                    "variables": [
+                        {
+                            "name": "participant1",
+                            "type": "model",
+                            "reference": "com.torocloud.mock.conversation.thread.participant.Participant"
+                        },
+                        {
+                            "name": "participant2",
+                            "type": "model",
+                            "reference": "com.torocloud.mock.conversation.thread.participant.Participant"
+                        }
+                    ]
+                }
+            ],
+            "lines": [
+                {
+                    "from": [
+                        "name1"
+                    ],
+                    "to": [
+                        "participant1",
+                        "name"
+                    ]
+                },
+                {
+                    "from": [
+                        "name2"
+                    ],
+                    "to": [
+                        "participant2",
+                        "name"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "invokeGloop",
+            "name": "com.torocloud.mock.conversation.thread.participant.RegisterParticipant",
+            "inputs": [
+                {
+                    "from": [
+                        "name1"
+                    ],
+                    "to": [
+                        "name"
+                    ]
+                }
+            ],
+            "outputs": [
+                {
+                    "from": [
+                        "participant"
+                    ],
+                    "to": [
+                        "participant1"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "invokeGloop",
+            "name": "com.torocloud.mock.conversation.thread.participant.RegisterParticipant",
+            "inputs": [
+                {
+                    "from": [
+                        "name2"
+                    ],
+                    "to": [
+                        "name"
+                    ]
+                }
+            ],
+            "outputs": [
+                {
+                    "from": [
+                        "participant"
+                    ],
+                    "to": [
+                        "participant2"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "while",
+            "comments": "Generate Chuck Norris jokes as conversation messages",
+            "expression": "$gloopIndex < count",
+            "evaluate": true,
+            "children": [
+                {
+                    "type": "invokeCode",
+                    "declare": [
+                        {
+                            "variables": [
+                                {
+                                    "name": "joke",
+                                    "type": "model",
+                                    "allowExtraProperties": true,
+                                    "gloopProperties": [
+                                        {
+                                            "name": "value"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ],
+                    "className": "io.toro.martini.HttpMethods",
+                    "methodName": "http",
+                    "parameters": [
+                        "io.toro.gloop.object.property.GloopModel",
+                        "io.toro.gloop.object.property.GloopModel",
+                        "java.lang.String",
+                        "java.lang.String",
+                        "boolean",
+                        "io.toro.gloop.object.property.GloopModel",
+                        "io.toro.gloop.engine.GloopExecutionContext"
+                    ],
+                    "inputs": [
+                        {
+                            "type": "set",
+                            "expression": "GET",
+                            "to": [
+                                "request",
+                                "method"
+                            ]
+                        },
+                        {
+                            "type": "set",
+                            "expression": "https://api.chucknorris.io/jokes/random",
+                            "to": [
+                                "request",
+                                "uri"
+                            ]
+                        },
+                        {
+                            "type": "set",
+                            "expression": "GloopObject",
+                            "to": [
+                                "returnAs"
+                            ]
+                        }
+                    ],
+                    "outputs": [
+                        {
+                            "from": [
+                                "response",
+                                "content"
+                            ],
+                            "to": [
+                                "joke"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "invokeGloop",
+                    "name": "com.torocloud.mock.conversation.thread.message.SendDirectMessage",
+                    "inputs": [
+                        {
+                            "from": [
+                                "joke",
+                                "value"
+                            ],
+                            "to": [
+                                "body"
+                            ]
+                        },
+                        {
+                            "from": [
+                                "participant1",
+                                "id"
+                            ],
+                            "to": [
+                                "from"
+                            ]
+                        },
+                        {
+                            "from": [
+                                "participant2",
+                                "id"
+                            ],
+                            "to": [
+                                "to"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "invokeGloop",
+                    "name": "com.torocloud.mock.conversation.thread.message.SendDirectMessage",
+                    "inputs": [
+                        {
+                            "from": [
+                                "joke",
+                                "value"
+                            ],
+                            "to": [
+                                "body"
+                            ]
+                        },
+                        {
+                            "from": [
+                                "participant2",
+                                "id"
+                            ],
+                            "to": [
+                                "from"
+                            ]
+                        },
+                        {
+                            "from": [
+                                "participant1",
+                                "id"
+                            ],
+                            "to": [
+                                "to"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "invokeCode",
+                    "className": "io.toro.martini.LoggerMethods",
+                    "methodName": "info",
+                    "parameters": [
+                        "java.lang.String"
+                    ],
+                    "inputs": [
+                        {
+                            "type": "set",
+                            "expression": "\"Generated '${($gloopIndex * 2) + 2}' messages so far...\"",
+                            "evaluate": true,
+                            "to": [
+                                "message"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

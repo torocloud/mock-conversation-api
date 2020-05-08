@@ -1,0 +1,87 @@
+{
+    "comments": "Archives a thread for a participant",
+    "input": [
+        {
+            "name": "participantId",
+            "comments": "The id of the participant that intends to archive a thread"
+        },
+        {
+            "name": "threadId",
+            "comments": "The thread id to archive, where this participant is in"
+        }
+    ],
+    "steps": [
+        {
+            "type": "invokeGloop",
+            "name": "com.torocloud.mock.conversation.configuration.DataSourceProperties",
+            "declare": [
+                {
+                    "variables": [
+                        {
+                            "name": "database",
+                            "type": "model",
+                            "gloopProperties": [
+                                {
+                                    "name": "name"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "outputs": [
+                {
+                    "from": [
+                        "name"
+                    ],
+                    "to": [
+                        "database",
+                        "name"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "invokeGloop",
+            "name": "com.torocloud.mock.conversation.thread._UpdateThreadParticipant",
+            "inputs": [
+                {
+                    "from": [
+                        "database",
+                        "name"
+                    ],
+                    "to": [
+                        "_UpdateThreadParticipantInput",
+                        "$martiniConnectionPool"
+                    ]
+                },
+                {
+                    "from": [
+                        "participantId"
+                    ],
+                    "to": [
+                        "_UpdateThreadParticipantInput",
+                        "participantId"
+                    ]
+                },
+                {
+                    "from": [
+                        "threadId"
+                    ],
+                    "to": [
+                        "_UpdateThreadParticipantInput",
+                        "threadId"
+                    ]
+                },
+                {
+                    "type": "set",
+                    "expression": "1",
+                    "to": [
+                        "_UpdateThreadParticipantInput",
+                        "archived"
+                    ]
+                }
+            ]
+        }
+    ]
+}

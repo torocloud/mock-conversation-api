@@ -1,0 +1,173 @@
+{
+    "steps": [
+        {
+            "type": "invokeGloop",
+            "name": "com.torocloud.mock.conversation.configuration.DataSourceProperties",
+            "declare": [
+                {
+                    "variables": [
+                        {
+                            "name": "database",
+                            "type": "model",
+                            "gloopProperties": [
+                                {
+                                    "name": "name"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "outputs": [
+                {
+                    "from": [
+                        "name"
+                    ],
+                    "to": [
+                        "database",
+                        "name"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "invokeCode",
+            "declare": [
+                {
+                    "variables": [
+                        {
+                            "name": "connectionPoolExists",
+                            "type": "boolean",
+                            "allowNull": false
+                        }
+                    ]
+                }
+            ],
+            "className": "io.toro.martini.DatabaseConnectionPoolMethods",
+            "methodName": "containsConnectionWithName",
+            "parameters": [
+                "java.lang.String"
+            ],
+            "inputs": [
+                {
+                    "from": [
+                        "database",
+                        "name"
+                    ],
+                    "to": [
+                        "name"
+                    ]
+                }
+            ],
+            "outputs": [
+                {
+                    "from": [
+                        "output"
+                    ],
+                    "to": [
+                        "connectionPoolExists"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "fork",
+            "expression": "connectionPoolExists",
+            "children": [
+                {
+                    "type": "block",
+                    "label": "true",
+                    "children": [
+                        {
+                            "type": "invokeCode",
+                            "comments": "Ensure started before interaction",
+                            "className": "io.toro.martini.DatabaseConnectionPoolMethods",
+                            "methodName": "startPool",
+                            "parameters": [
+                                "java.lang.String"
+                            ],
+                            "inputs": [
+                                {
+                                    "from": [
+                                        "database",
+                                        "name"
+                                    ],
+                                    "to": [
+                                        "name"
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "invokeCode",
+                            "comments": "Drop tables",
+                            "className": "io.toro.martini.SqlMethods",
+                            "methodName": "sql",
+                            "parameters": [
+                                "java.lang.String",
+                                "groovy.lang.Closure"
+                            ],
+                            "inputs": [
+                                {
+                                    "from": [
+                                        "database",
+                                        "name"
+                                    ],
+                                    "to": [
+                                        "poolName"
+                                    ]
+                                },
+                                {
+                                    "type": "set",
+                                    "expression": "{\tsql ->\n\tsql.execute ( '''\nDROP TABLE \"MESSAGES\"; \nDROP TABLE \"THREAD_PARTICIPANTS\";\nDROP TABLE \"THREADS\";\nDROP TABLE \"PARTICIPANTS\";\n''' )\n}",
+                                    "evaluate": true,
+                                    "to": [
+                                        "c"
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "invokeCode",
+                            "className": "io.toro.martini.DatabaseConnectionPoolMethods",
+                            "methodName": "stopPool",
+                            "parameters": [
+                                "java.lang.String"
+                            ],
+                            "inputs": [
+                                {
+                                    "from": [
+                                        "database",
+                                        "name"
+                                    ],
+                                    "to": [
+                                        "name"
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "invokeCode",
+                            "className": "io.toro.martini.DatabaseConnectionPoolMethods",
+                            "methodName": "deletePool",
+                            "parameters": [
+                                "java.lang.String"
+                            ],
+                            "inputs": [
+                                {
+                                    "from": [
+                                        "database",
+                                        "name"
+                                    ],
+                                    "to": [
+                                        "name"
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

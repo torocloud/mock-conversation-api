@@ -1,0 +1,33 @@
+{
+    "type": "customSql",
+    "input": [
+        {
+            "name": "_UpdateThreadParticipantInput",
+            "type": "model",
+            "gloopProperties": [
+                {
+                    "name": "$martiniConnectionPool"
+                },
+                {
+                    "name": "archived",
+                    "type": "integer"
+                },
+                {
+                    "name": "participantId"
+                },
+                {
+                    "name": "threadId"
+                }
+            ]
+        }
+    ],
+    "output": [
+        {
+            "name": "updateCount",
+            "type": "integer"
+        }
+    ],
+    "connectionPoolName": "mock_conversation_api",
+    "sqlType": "UPDATE",
+    "query": "UPDATE \n\t\"THREAD_PARTICIPANTS\"\nSET\n\t\"ARCHIVED\" = :archived\nWHERE\n\t\"PARTICIPANT_ID\" = :participantId \n\tAND\n\t\"THREAD_ID\" = :threadId;"
+}

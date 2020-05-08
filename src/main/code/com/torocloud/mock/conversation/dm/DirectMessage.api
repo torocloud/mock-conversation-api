@@ -1,0 +1,154 @@
+{
+    "info": {
+        "title": "Conversation",
+        "license": {
+            "name": "MIT"
+        },
+        "version": "1.0.0-SNAPSHOT"
+    },
+    "basePath": "/conversations/dm",
+    "paths": {
+        "/list": {
+            "description": "Endpoint for listing current conversations",
+            "get": {
+                "parameters": [
+                    {
+                        "name": "X_USERNAME",
+                        "type": "HEADER"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "body": "response200"
+                    },
+                    "400": {
+                        "body": "response400"
+                    },
+                    "500": {
+                        "body": "response500"
+                    }
+                },
+                "operationType": "gloop",
+                "operationLocation": "com.torocloud.mock.conversation.dm.List",
+                "responseCodeField": "responseCode"
+            }
+        },
+        "/to/{to}": {
+            "description": "Endpoint for loading and sending direct messages",
+            "get": {
+                "parameters": [
+                    {
+                        "name": "X_USERNAME",
+                        "type": "HEADER"
+                    },
+                    {
+                        "name": "to",
+                        "type": "PATH"
+                    },
+                    {
+                        "name": "offset",
+                        "type": "QUERY"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "body": "response200"
+                    },
+                    "400": {
+                        "body": "response400"
+                    },
+                    "500": {
+                        "body": "response500"
+                    }
+                },
+                "operationType": "gloop",
+                "operationLocation": "com.torocloud.mock.conversation.dm.Load",
+                "responseCodeField": "responseCode"
+            },
+            "post": {
+                "consumes": [
+                    "text/plain; charset=utf-8"
+                ],
+                "parameters": [
+                    {
+                        "name": "X_USERNAME",
+                        "type": "HEADER"
+                    },
+                    {
+                        "name": "to",
+                        "type": "PATH"
+                    }
+                ],
+                "bodyParameter": {
+                    "name": "body"
+                },
+                "responses": {
+                    "204": {
+                        "body": "response204"
+                    },
+                    "400": {
+                        "body": "response400"
+                    },
+                    "500": {
+                        "body": "response500"
+                    }
+                },
+                "operationType": "gloop",
+                "operationLocation": "com.torocloud.mock.conversation.dm.Send",
+                "responseCodeField": "responseCode"
+            }
+        },
+        "/to/{to}/archive": {
+            "description": "Archives a conversation for the current participant",
+            "put": {
+                "parameters": [
+                    {
+                        "name": "X_USERNAME",
+                        "type": "HEADER"
+                    },
+                    {
+                        "name": "to",
+                        "type": "PATH"
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "body": "response202"
+                    },
+                    "400": {
+                        "body": "response400"
+                    },
+                    "500": {
+                        "body": "response500",
+                        "description": "When the exception is unhandled"
+                    }
+                },
+                "operationType": "gloop",
+                "operationLocation": "com.torocloud.mock.conversation.dm.Archive",
+                "responseCodeField": "responseCode"
+            }
+        },
+        "/register": {
+            "description": "Endpoint for registering new participants",
+            "post": {
+                "bodyParameter": {
+                    "name": "participant"
+                },
+                "responses": {
+                    "200": {
+                        "body": "response200"
+                    },
+                    "400": {
+                        "body": "response400"
+                    },
+                    "500": {
+                        "body": "response500"
+                    }
+                },
+                "operationType": "gloop",
+                "operationLocation": "com.torocloud.mock.conversation.dm.Register",
+                "responseCodeField": "responseCode"
+            }
+        }
+    }
+}

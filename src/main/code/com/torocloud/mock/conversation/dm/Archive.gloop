@@ -1,0 +1,320 @@
+{
+    "input": [
+        {
+            "name": "X_USERNAME",
+            "allowNull": false,
+            "comments": "The sender participant username"
+        },
+        {
+            "name": "to",
+            "allowNull": false,
+            "comments": "The recipient participant username"
+        }
+    ],
+    "output": [
+        {
+            "name": "responseCode",
+            "type": "integer"
+        },
+        {
+            "name": "response202",
+            "type": "model",
+            "comments": "When the thread is archived, from the perspective of the requesting participant",
+            "reference": "io.toro.martini.api.APIResponse"
+        },
+        {
+            "name": "response400",
+            "type": "model",
+            "comments": "When the thread could not be archived",
+            "reference": "io.toro.martini.api.APIException"
+        },
+        {
+            "name": "response500",
+            "type": "model",
+            "reference": "io.toro.martini.api.APIException"
+        }
+    ],
+    "steps": [
+        {
+            "type": "invokeGloop",
+            "name": "com.torocloud.mock.conversation.thread.participant.GetParticipantByName",
+            "declare": [
+                {
+                    "variables": [
+                        {
+                            "name": "error",
+                            "type": "model",
+                            "reference": "com.torocloud.mock.conversation.Error"
+                        },
+                        {
+                            "name": "thisParticipant",
+                            "type": "model",
+                            "reference": "com.torocloud.mock.conversation.thread.participant.Participant"
+                        }
+                    ]
+                }
+            ],
+            "inputs": [
+                {
+                    "from": [
+                        "X_USERNAME"
+                    ],
+                    "to": [
+                        "participantName"
+                    ]
+                }
+            ],
+            "outputs": [
+                {
+                    "from": [
+                        "error"
+                    ],
+                    "to": [
+                        "error"
+                    ]
+                },
+                {
+                    "from": [
+                        "match"
+                    ],
+                    "to": [
+                        "thisParticipant"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "fork",
+            "comments": "Is the sender a registered participant?",
+            "expression": "error.code == null",
+            "children": [
+                {
+                    "type": "block",
+                    "label": "true",
+                    "children": [
+                        {
+                            "type": "invokeGloop",
+                            "name": "com.torocloud.mock.conversation.thread.participant.GetParticipantByName",
+                            "declare": [
+                                {
+                                    "variables": [
+                                        {
+                                            "name": "thatParticipant",
+                                            "type": "model",
+                                            "reference": "com.torocloud.mock.conversation.thread.participant.Participant"
+                                        }
+                                    ]
+                                }
+                            ],
+                            "inputs": [
+                                {
+                                    "from": [
+                                        "to"
+                                    ],
+                                    "to": [
+                                        "participantName"
+                                    ]
+                                }
+                            ],
+                            "outputs": [
+                                {
+                                    "from": [
+                                        "error"
+                                    ],
+                                    "to": [
+                                        "error"
+                                    ]
+                                },
+                                {
+                                    "from": [
+                                        "match"
+                                    ],
+                                    "to": [
+                                        "thatParticipant"
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "fork",
+                            "comments": "Is the recipient a registered participant?",
+                            "expression": "error.code == null",
+                            "children": [
+                                {
+                                    "type": "block",
+                                    "label": "true",
+                                    "children": [
+                                        {
+                                            "type": "invokeGloop",
+                                            "name": "com.torocloud.mock.conversation.thread.OpenThreadBetween",
+                                            "declare": [
+                                                {
+                                                    "variables": [
+                                                        {
+                                                            "name": "thread",
+                                                            "type": "model",
+                                                            "reference": "com.torocloud.mock.conversation.thread.Thread"
+                                                        }
+                                                    ]
+                                                }
+                                            ],
+                                            "inputs": [
+                                                {
+                                                    "from": [
+                                                        "thatParticipant",
+                                                        "id"
+                                                    ],
+                                                    "to": [
+                                                        "to"
+                                                    ]
+                                                },
+                                                {
+                                                    "from": [
+                                                        "thisParticipant",
+                                                        "id"
+                                                    ],
+                                                    "to": [
+                                                        "from"
+                                                    ]
+                                                }
+                                            ],
+                                            "outputs": [
+                                                {
+                                                    "from": [
+                                                        "thread"
+                                                    ],
+                                                    "to": [
+                                                        "thread"
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "type": "invokeGloop",
+                                            "name": "com.torocloud.mock.conversation.thread.ArchiveThread",
+                                            "inputs": [
+                                                {
+                                                    "from": [
+                                                        "thisParticipant",
+                                                        "id"
+                                                    ],
+                                                    "to": [
+                                                        "participantId"
+                                                    ]
+                                                },
+                                                {
+                                                    "from": [
+                                                        "thread",
+                                                        "id"
+                                                    ],
+                                                    "to": [
+                                                        "threadId"
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "comments": "202 - Accepted",
+                                            "lines": [
+                                                {
+                                                    "type": "set",
+                                                    "expression": "202",
+                                                    "to": [
+                                                        "responseCode"
+                                                    ]
+                                                },
+                                                {
+                                                    "type": "set",
+                                                    "expression": "\"The conversation '${thread.id}' was archived for '${thisParticipant.name}'\"",
+                                                    "evaluate": true,
+                                                    "to": [
+                                                        "response202",
+                                                        "message"
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "type": "break",
+                                            "expression": "$gloopService"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "fork",
+            "expression": "error.code",
+            "children": [
+                {
+                    "label": "NO_SUCH_PARTICIPANT",
+                    "comments": "400 - Bad Request",
+                    "lines": [
+                        {
+                            "from": [
+                                "error",
+                                "message"
+                            ],
+                            "to": [
+                                "response400",
+                                "message"
+                            ]
+                        },
+                        {
+                            "type": "set",
+                            "expression": "400",
+                            "to": [
+                                "responseCode"
+                            ]
+                        },
+                        {
+                            "type": "set",
+                            "expression": "error.code.getValue()",
+                            "evaluate": true,
+                            "to": [
+                                "response400",
+                                "apiErrorCode"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "$else",
+                    "comments": "500 - Internal Server Error",
+                    "lines": [
+                        {
+                            "from": [
+                                "error",
+                                "message"
+                            ],
+                            "to": [
+                                "response500",
+                                "message"
+                            ]
+                        },
+                        {
+                            "type": "set",
+                            "expression": "error.code.getValue()",
+                            "evaluate": true,
+                            "to": [
+                                "response500",
+                                "apiErrorCode"
+                            ]
+                        },
+                        {
+                            "type": "set",
+                            "expression": "500",
+                            "to": [
+                                "responseCode"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

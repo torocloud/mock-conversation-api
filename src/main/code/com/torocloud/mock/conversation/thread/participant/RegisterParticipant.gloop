@@ -1,0 +1,211 @@
+{
+    "comments": "Registers the provided participant",
+    "input": [
+        {
+            "name": "name",
+            "comments": "The participant name",
+            "maxLength": 50
+        }
+    ],
+    "output": [
+        {
+            "name": "participant",
+            "type": "model",
+            "comments": "The registered participant",
+            "reference": "com.torocloud.mock.conversation.thread.participant.Participant"
+        },
+        {
+            "name": "error",
+            "type": "model",
+            "reference": "com.torocloud.mock.conversation.Error"
+        }
+    ],
+    "steps": [
+        {
+            "type": "invokeGloop",
+            "name": "com.torocloud.mock.conversation.configuration.DataSourceProperties",
+            "declare": [
+                {
+                    "variables": [
+                        {
+                            "name": "database",
+                            "type": "model",
+                            "gloopProperties": [
+                                {
+                                    "name": "name"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "outputs": [
+                {
+                    "from": [
+                        "name"
+                    ],
+                    "to": [
+                        "database",
+                        "name"
+                    ]
+                }
+            ]
+        },
+        {
+            "comments": "Initialize participant model",
+            "lines": [
+                {
+                    "from": [
+                        "name"
+                    ],
+                    "to": [
+                        "participant",
+                        "name"
+                    ]
+                },
+                {
+                    "type": "set",
+                    "expression": "UUID.randomUUID().toString()",
+                    "evaluate": true,
+                    "to": [
+                        "participant",
+                        "id"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "block",
+            "blockType": "TRY_CATCH",
+            "children": [
+                {
+                    "type": "invokeGloop",
+                    "comments": "Persist model",
+                    "name": "com.torocloud.mock.conversation.thread.participant._RegisterParticipant",
+                    "inputs": [
+                        {
+                            "from": [
+                                "database",
+                                "name"
+                            ],
+                            "to": [
+                                "_RegisterParticipantInput",
+                                "$martiniConnectionPool"
+                            ]
+                        },
+                        {
+                            "from": [
+                                "participant",
+                                "id"
+                            ],
+                            "to": [
+                                "_RegisterParticipantInput",
+                                "id"
+                            ]
+                        },
+                        {
+                            "from": [
+                                "participant",
+                                "name"
+                            ],
+                            "to": [
+                                "_RegisterParticipantInput",
+                                "name"
+                            ]
+                        },
+                        {
+                            "type": "set",
+                            "expression": "false",
+                            "to": [
+                                "_RegisterParticipantInput",
+                                "$getGeneratedKeys"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "catch": [
+                {
+                    "comments": "Extract java.sql.SQLException",
+                    "declare": [
+                        {
+                            "variables": [
+                                {
+                                    "name": "rootCauseName"
+                                }
+                            ]
+                        }
+                    ],
+                    "lines": [
+                        {
+                            "type": "set",
+                            "expression": "def ex = $gloopException.realException\nwhile ((cause = ex.getCause()) != null ) {\n\tex = cause\n\tif (cause instanceof java.sql.SQLException)\n\t\tbreak\n}\nex.getClass().getSimpleName()",
+                            "evaluate": true,
+                            "to": [
+                                "rootCauseName"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "type": "fork",
+                    "expression": "rootCauseName",
+                    "children": [
+                        {
+                            "label": "SQLIntegrityConstraintViolationException",
+                            "lines": [
+                                {
+                                    "type": "set",
+                                    "expression": "com.torocloud.mock.conversation.Code.PARTICIPANT_ALREADY_EXISTS",
+                                    "evaluate": true,
+                                    "to": [
+                                        "error",
+                                        "code"
+                                    ]
+                                },
+                                {
+                                    "type": "set",
+                                    "expression": "\"The participant name '${participant.name}' is already registered\"",
+                                    "evaluate": true,
+                                    "to": [
+                                        "error",
+                                        "message"
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "invokeCode",
+                            "label": "$else",
+                            "className": "io.toro.martini.GloopMethods",
+                            "methodName": "throwException",
+                            "parameters": [
+                                "java.lang.String",
+                                "java.lang.Throwable"
+                            ],
+                            "inputs": [
+                                {
+                                    "from": [
+                                        "$gloopException",
+                                        "realException"
+                                    ],
+                                    "to": [
+                                        "cause"
+                                    ]
+                                },
+                                {
+                                    "type": "set",
+                                    "expression": "\"Unexpected exception encountered while registering '${participant.name}'\"",
+                                    "evaluate": true,
+                                    "to": [
+                                        "message"
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

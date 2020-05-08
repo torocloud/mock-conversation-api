@@ -1,0 +1,36 @@
+{
+    "type": "customSql",
+    "input": [
+        {
+            "name": "_CreateNewThreadInput",
+            "type": "model",
+            "gloopProperties": [
+                {
+                    "name": "$martiniConnectionPool"
+                },
+                {
+                    "name": "$getGeneratedKeys",
+                    "type": "boolean",
+                    "defaultValue": false
+                },
+                {
+                    "name": "id"
+                }
+            ]
+        }
+    ],
+    "output": [
+        {
+            "name": "updateCount",
+            "type": "integer"
+        },
+        {
+            "name": "generatedKeys",
+            "type": "model",
+            "allowExtraProperties": true
+        }
+    ],
+    "connectionPoolName": "mock_conversation_api",
+    "sqlType": "INSERT",
+    "query": "INSERT INTO \"THREADS\" (\"ID\") VALUES (:id)"
+}

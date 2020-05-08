@@ -1,0 +1,293 @@
+{
+    "comments": "Loads the last N messages between two participants, starting from the most recent",
+    "input": [
+        {
+            "name": "from",
+            "allowNull": false,
+            "defaultValue": "",
+            "comments": "The sender participant id"
+        },
+        {
+            "name": "to",
+            "allowNull": false,
+            "comments": "The recepient participant id"
+        },
+        {
+            "name": "count",
+            "type": "integer",
+            "allowNull": false,
+            "defaultValue": 10,
+            "comments": "The number of messages to load"
+        },
+        {
+            "name": "offset",
+            "type": "integer",
+            "allowNull": false,
+            "defaultValue": 0,
+            "comments": "The number of messages to skip"
+        }
+    ],
+    "output": [
+        {
+            "name": "messages",
+            "type": "model",
+            "allowNull": false,
+            "array": true,
+            "reference": "com.torocloud.mock.conversation.thread.message.Message"
+        },
+        {
+            "name": "error",
+            "type": "model",
+            "reference": "com.torocloud.mock.conversation.Error"
+        }
+    ],
+    "steps": [
+        {
+            "type": "invokeGloop",
+            "name": "com.torocloud.mock.conversation.configuration.DataSourceProperties",
+            "declare": [
+                {
+                    "variables": [
+                        {
+                            "name": "database",
+                            "type": "model",
+                            "gloopProperties": [
+                                {
+                                    "name": "name"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "invokeGloop",
+            "name": "com.torocloud.mock.conversation.thread.OpenThreadBetween",
+            "declare": [
+                {
+                    "variables": [
+                        {
+                            "name": "threadId"
+                        }
+                    ]
+                }
+            ],
+            "inputs": [
+                {
+                    "from": [
+                        "from"
+                    ],
+                    "to": [
+                        "from"
+                    ]
+                },
+                {
+                    "from": [
+                        "to"
+                    ],
+                    "to": [
+                        "to"
+                    ]
+                }
+            ],
+            "outputs": [
+                {
+                    "from": [
+                        "thread",
+                        "id"
+                    ],
+                    "to": [
+                        "threadId"
+                    ]
+                },
+                {
+                    "from": [
+                        "error"
+                    ],
+                    "to": [
+                        "error"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "fork",
+            "comments": "Was the thread not available?",
+            "expression": "error.code != null",
+            "children": [
+                {
+                    "type": "break",
+                    "label": "true",
+                    "expression": "$gloopService"
+                }
+            ]
+        },
+        {
+            "type": "invokeGloop",
+            "name": "com.torocloud.mock.conversation.thread.message._FindThreadMessages",
+            "declare": [
+                {
+                    "variables": [
+                        {
+                            "name": "messageCursor",
+                            "type": "model",
+                            "array": true,
+                            "gloopProperties": [
+                                {
+                                    "name": "ID",
+                                    "required": true,
+                                    "allowNull": false
+                                },
+                                {
+                                    "name": "BODY",
+                                    "required": true,
+                                    "allowNull": false
+                                },
+                                {
+                                    "name": "ARCHIVED",
+                                    "type": "boolean",
+                                    "required": true,
+                                    "allowNull": false
+                                },
+                                {
+                                    "name": "DATE_CREATED",
+                                    "type": "date",
+                                    "required": true
+                                },
+                                {
+                                    "name": "PARTICIPANT_ID",
+                                    "required": true,
+                                    "allowNull": false
+                                },
+                                {
+                                    "name": "THREAD_ID",
+                                    "required": true,
+                                    "allowNull": false
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "inputs": [
+                {
+                    "from": [
+                        "threadId"
+                    ],
+                    "to": [
+                        "_FindThreadMessagesInput",
+                        "threadId"
+                    ]
+                },
+                {
+                    "from": [
+                        "count"
+                    ],
+                    "to": [
+                        "_FindThreadMessagesInput",
+                        "$limit"
+                    ]
+                },
+                {
+                    "from": [
+                        "offset"
+                    ],
+                    "to": [
+                        "_FindThreadMessagesInput",
+                        "skip"
+                    ]
+                },
+                {
+                    "from": [
+                        "database",
+                        "name"
+                    ],
+                    "to": [
+                        "_FindThreadMessagesInput",
+                        "$martiniConnectionPool"
+                    ]
+                }
+            ],
+            "outputs": [
+                {
+                    "from": [
+                        "_FindThreadMessagesInputCursor"
+                    ],
+                    "to": [
+                        "messageCursor"
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "iterate",
+            "input": {
+                "path": [
+                    "messageCursor"
+                ]
+            },
+            "output": {
+                "path": [
+                    "messages"
+                ]
+            },
+            "children": [
+                {
+                    "lines": [
+                        {
+                            "from": [
+                                "messageCursor",
+                                "ID"
+                            ],
+                            "to": [
+                                "messages",
+                                "id"
+                            ]
+                        },
+                        {
+                            "from": [
+                                "messageCursor",
+                                "BODY"
+                            ],
+                            "to": [
+                                "messages",
+                                "body"
+                            ]
+                        },
+                        {
+                            "from": [
+                                "messageCursor",
+                                "DATE_CREATED"
+                            ],
+                            "to": [
+                                "messages",
+                                "createdAt"
+                            ]
+                        },
+                        {
+                            "from": [
+                                "messageCursor",
+                                "PARTICIPANT_ID"
+                            ],
+                            "to": [
+                                "messages",
+                                "participantId"
+                            ]
+                        },
+                        {
+                            "from": [
+                                "messageCursor",
+                                "THREAD_ID"
+                            ],
+                            "to": [
+                                "messages",
+                                "threadId"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}
